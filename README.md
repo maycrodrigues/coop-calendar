@@ -1,5 +1,12 @@
 # Coop Calendar
 
+![Build & Deploy](https://github.com/maycrodrigues/coop-calendar/actions/workflows/deploy.yml/badge.svg)
+![GitHub Pages](https://img.shields.io/github/deployments/maycrodrigues/coop-calendar/github-pages?label=GitHub%20Pages&logo=github)
+![Version](https://img.shields.io/github/v/release/maycrodrigues/coop-calendar?label=version&color=blue)
+![React](https://img.shields.io/badge/React-18.3.1-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.5.3-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-5.4.2-646CFF?logo=vite&logoColor=white)
+
 Sistema de calendário cooperativo.
 
 🔗 **Acesse o sistema online:** [https://maycrodrigues.github.io/coop-calendar/](https://maycrodrigues.github.io/coop-calendar/)
