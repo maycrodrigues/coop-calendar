@@ -127,27 +127,13 @@ export const useSync = () => {
 
     fetchRemoteData();
 
-    // 2. Subscribe to Realtime Changes
-    const channel = supabase
-      .channel('calendar_sync')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'events', filter: `user_email=eq.${email}` },
-        () => {
-          fetchRemoteData();
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'days', filter: `user_email=eq.${email}` },
-        () => {
-          fetchRemoteData();
-        }
-      )
-      .subscribe();
+    // 2. Poll for updates every 30 seconds (replacing Realtime to avoid loops)
+    const intervalId = setInterval(() => {
+      fetchRemoteData();
+    }, 30000);
 
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(intervalId);
     };
   }, [email, setEvents, setDays, initializeDefaultEvents]);
 
