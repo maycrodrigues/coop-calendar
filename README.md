@@ -2,6 +2,8 @@
 
 Sistema de calendário cooperativo.
 
+🔗 **Acesse o sistema online:** [https://maycrodrigues.github.io/coop-calendar/](https://maycrodrigues.github.io/coop-calendar/)
+
 ## 🚀 Deploy
 
 Este projeto está configurado para deploy automático no GitHub Pages usando GitHub Actions.
