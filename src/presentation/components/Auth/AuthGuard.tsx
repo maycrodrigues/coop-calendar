@@ -9,11 +9,9 @@ interface AuthGuardProps {
 export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const { email, isAuthenticated } = useAuthStore();
 
-  // 1. If no email or not authenticated, show login
   if (!email || !isAuthenticated) {
     return <LoginScreen />;
   }
 
-  // 2. Authenticated -> Show content
   return <>{children}</>;
 };
