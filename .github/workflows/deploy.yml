@@ -15,11 +15,59 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  versioning:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    outputs:
+      new_version: ${{ steps.bump_version.outputs.new_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Bump Version
+        id: bump_version
+        run: |
+          # Detect bump type based on commit message
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          BUMP_TYPE="patch"
+          
+          if [[ "$COMMIT_MSG" == *"feat:"* ]]; then
+            BUMP_TYPE="minor"
+          elif [[ "$COMMIT_MSG" == *"BREAKING CHANGE"* ]]; then
+            BUMP_TYPE="major"
+          fi
+          
+          echo "Bumping version ($BUMP_TYPE)..."
+          
+          # Bump version (updates package.json and creates git tag)
+          npm version $BUMP_TYPE -m "chore(release): %s [skip ci]"
+          
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          
+          # Push changes and tags
+          git push origin main --follow-tags
+
   build:
+    needs: versioning
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: main # Ensure we checkout the updated version
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -50,40 +98,22 @@ jobs:
         uses: actions/deploy-pages@v4
 
   release:
-    needs: deploy
+    needs: [deploy, versioning]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for release notes
 
-      - name: Check version and create release
-        id: create_release
+      - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: "v${{ needs.versioning.outputs.new_version }}"
         run: |
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          TAG_NAME="v$PACKAGE_VERSION"
+          echo "Creating release for tag: $TAG_NAME"
           
-          echo "Package version: $PACKAGE_VERSION"
-          echo "Tag name: $TAG_NAME"
-          
-          # Check if tag exists
-          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
-            echo "Tag $TAG_NAME already exists. Skipping release."
-          else
-            echo "Tag $TAG_NAME does not exist. Creating release..."
-            
-            # Configure git
-            git config user.name "GitHub Actions"
-            git config user.email "actions@github.com"
-            
-            # Create tag
-            git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
-            git push origin "$TAG_NAME"
-            
-            # Create release
-            gh release create "$TAG_NAME" \
-              --title "Release $TAG_NAME" \
-              --generate-notes
-          fi
+          # Create release
+          gh release create "$TAG_NAME" \
+            --title "Release $TAG_NAME" \
+            --generate-notes
