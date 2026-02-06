@@ -19,6 +19,8 @@ interface CalendarState {
   getEventsForDay: (date: Date) => CalendarEvent[];
   clearAllDays: () => void;
   initializeDefaultEvents: () => void;
+  setEvents: (events: CalendarEvent[]) => void;
+  setDays: (days: Record<string, ParentType>) => void;
 }
 
 const formatDate = (date: Date): string => {
@@ -113,6 +115,14 @@ export const useCalendarStore = create<CalendarState>()(
           logAction('INIT_DEFAULT_EVENTS', `Initialized ${newEvents.length} default events`);
           return { events: newEvents };
         });
+      },
+
+      setEvents: (events: CalendarEvent[]) => {
+        set({ events });
+      },
+
+      setDays: (days: Record<string, ParentType>) => {
+        set({ days });
       },
     }),
     {

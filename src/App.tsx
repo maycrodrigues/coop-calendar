@@ -6,10 +6,13 @@ import { CalendarLayout } from './presentation/components/Layout/CalendarLayout'
 import { LanguageSelector } from './presentation/components/Language/LanguageSelector';
 import { useCalendarStore } from './infrastructure/stores/useCalendarStore';
 import { AuthGuard } from './presentation/components/Auth/AuthGuard';
+import { useSync } from './hooks/useSync';
 
 function App() {
   const { t, i18n } = useTranslation();
   const { initializeDefaultEvents } = useCalendarStore();
+  
+  useSync(); // Initialize sync mechanism
 
   useEffect(() => {
     initializeDefaultEvents();
