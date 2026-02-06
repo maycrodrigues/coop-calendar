@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { Calendar } from './presentation/components/Calendar/Calendar';
 import { CalendarLayout } from './presentation/components/Layout/CalendarLayout';
-import { LanguageSelector } from './presentation/components/Language/LanguageSelector';
 import { useCalendarStore } from './infrastructure/stores/useCalendarStore';
 import { AuthGuard } from './presentation/components/Auth/AuthGuard';
 import { useSync } from './hooks/useSync';
@@ -39,11 +38,10 @@ function App() {
       <AuthGuard>
         <CalendarLayout>
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-center items-center">
               <h1 className="text-2xl font-bold text-gray-900">
                 {t('appTitle')}
               </h1>
-              <LanguageSelector />
             </div>
             <Calendar />
           </div>
