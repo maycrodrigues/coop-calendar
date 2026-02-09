@@ -23,9 +23,10 @@ import { Calendar, Plus, X } from 'lucide-react';
 
 interface YearViewProps {
   currentDate: Date;
+  readOnly?: boolean;
 }
 
-export const YearView: React.FC<YearViewProps> = ({ currentDate }) => {
+export const YearView: React.FC<YearViewProps> = ({ currentDate, readOnly = false }) => {
   const { t } = useTranslation();
   const { getParentForDay, setParentForDay, getEventsForDay } = useCalendarStore();
   const { openModal } = useEventModalStore();
@@ -41,29 +42,32 @@ export const YearView: React.FC<YearViewProps> = ({ currentDate }) => {
   const [isDragging, setIsDragging] = useState(false);
   const toKey = (date: Date) => date.toISOString().split('T')[0];
   const addSelected = useCallback((key: string) => {
+    if (readOnly) return;
     setSelectedDays(prev => {
       const next = new Set(prev);
       next.add(key);
       return next;
     });
-  }, []);
+  }, [readOnly]);
   useEffect(() => {
+    if (readOnly) return;
     const handleMouseUp = () => setIsDragging(false);
     window.addEventListener('mouseup', handleMouseUp);
     return () => window.removeEventListener('mouseup', handleMouseUp);
-  }, []);
+  }, [readOnly]);
   const applyParentToSelection = useCallback((parent: 'father' | 'mother' | null) => {
+    if (readOnly) return;
     selectedDays.forEach(key => {
       const [y, m, d] = key.split('-').map(Number);
       const date = new Date(y, m - 1, d);
       setParentForDay(date, parent);
     });
-  }, [selectedDays, setParentForDay]);
+  }, [selectedDays, setParentForDay, readOnly]);
 
   const clearSelection = useCallback(() => setSelectedDays(new Set()), []);
 
   const handleAddEvent = useCallback(() => {
-    if (selectedDays.size === 0) return;
+    if (readOnly || selectedDays.size === 0) return;
     
     const dates = Array.from(selectedDays).sort();
     const startDateStr = dates[0];
@@ -77,7 +81,7 @@ export const YearView: React.FC<YearViewProps> = ({ currentDate }) => {
     
     openModal(startDate, null, endDate);
     clearSelection();
-  }, [selectedDays, openModal, clearSelection]);
+  }, [selectedDays, openModal, clearSelection, readOnly]);
 
   const getDayStyle = (date: Date) => {
     const parent = getParentForDay(date);
@@ -90,14 +94,31 @@ export const YearView: React.FC<YearViewProps> = ({ currentDate }) => {
       w-full h-full flex items-center justify-center select-none relative
       ${background}
       ${isWeekendDay ? 'bg-opacity-75' : ''}
-      ${parent ? '' : 'hover:bg-gray-100'}
+      ${parent || readOnly ? '' : 'hover:bg-gray-100'}
       transition-colors duration-200
     `;
   };
 
+  const handleDayClick = (date: Date) => {
+    if (readOnly) return;
+    // ... selection logic ...
+    const key = toKey(date);
+    if (selectedDays.has(key)) {
+       const next = new Set(selectedDays);
+       next.delete(key);
+       setSelectedDays(next);
+    } else {
+       addSelected(key);
+    }
+  };
+
   return (
-    <div className="space-y-4 select-none">
-      {selectedDays.size > 0 && (
+    <div className={`space-y-4 select-none ${readOnly ? 'pointer-events-none sm:pointer-events-auto' : ''}`}>
+      {/* We allow tooltip interactions in readOnly, so pointer-events-none might be too aggressive if we want tooltips. 
+          Actually, YearViewDay handles tooltips. 
+          The selection logic is what we want to block. 
+      */}
+      {!readOnly && selectedDays.size > 0 && (
         <div className="fixed bottom-0 left-0 right-0 sm:bottom-4 sm:left-auto sm:right-4 z-50 bg-white border-t sm:border border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] sm:shadow-lg rounded-t-xl sm:rounded-lg p-3 sm:p-2 flex flex-col sm:flex-row items-center gap-3 sm:gap-2">
           <div className="flex w-full sm:w-auto items-center justify-between gap-2">
             <span className="text-xs text-gray-500 sm:ml-2 order-2 sm:order-last font-medium">

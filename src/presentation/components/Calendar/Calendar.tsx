@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CalendarHeader } from './Header/CalendarHeader';
 import { CalendarViewSelector } from './ViewSelector/CalendarViewSelector';
 import { MonthView } from './Views/MonthView';
@@ -8,10 +8,19 @@ import { useCalendarNavigation } from '../../hooks/useCalendarNavigation';
 import { AddEventModal } from './Modals/AddEventModal';
 import { LogViewerModal } from './Modals/LogViewerModal';
 import { CalendarActions } from '../Layout/Footer/CalendarActions';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 export const Calendar: React.FC = () => {
-  const [view, setView] = useState<CalendarViewType>('month');
+  const isMobile = useIsMobile();
+  const [view, setView] = useState<CalendarViewType>(isMobile ? 'year' : 'month');
   const { currentDate, navigateForward, navigateBackward } = useCalendarNavigation(view);
+
+  // Force Year View on Mobile
+  useEffect(() => {
+    if (isMobile && view !== 'year') {
+      setView('year');
+    }
+  }, [isMobile, view]);
 
   const ViewComponent = {
     month: MonthView,
@@ -28,17 +37,31 @@ export const Calendar: React.FC = () => {
             onPrevious={navigateBackward}
             onNext={navigateForward}
           />
-          <CalendarViewSelector
-            currentView={view}
-            onViewChange={setView}
-          />
+          {!isMobile && (
+            <CalendarViewSelector
+              currentView={view}
+              onViewChange={setView}
+            />
+          )}
         </div>
-        <ViewComponent currentDate={currentDate} />
-        <div className="mt-8 pt-8 border-t border-gray-200">
-          <CalendarActions />
-        </div>
+        
+        {/* Pass readOnly={true} if on mobile.
+            Note: MonthView doesn't accept readOnly yet, but it won't be rendered on mobile.
+            YearView now accepts readOnly.
+        */}
+        <ViewComponent 
+          currentDate={currentDate} 
+          {...(view === 'year' ? { readOnly: isMobile } : {})}
+        />
+
+        {/* Hide footer actions on mobile if read-only implies no actions */}
+        {!isMobile && (
+          <div className="mt-8 pt-8 border-t border-gray-200">
+            <CalendarActions />
+          </div>
+        )}
       </div>
-      <AddEventModal />
+      {!isMobile && <AddEventModal />}
       <LogViewerModal />
     </>
   );
