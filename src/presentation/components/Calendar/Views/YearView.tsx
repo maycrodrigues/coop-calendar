@@ -112,6 +112,19 @@ export const YearView: React.FC<YearViewProps> = ({ currentDate, readOnly = fals
     }
   };
 
+  useEffect(() => {
+    // Scroll to current month on mount if mobile
+    if (readOnly) {
+      const currentMonth = new Date().getMonth();
+      const monthElement = document.getElementById(`month-${currentMonth}`);
+      if (monthElement) {
+        setTimeout(() => {
+          monthElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    }
+  }, [readOnly]);
+
   return (
     <div className={`space-y-4 select-none ${readOnly ? 'pointer-events-none sm:pointer-events-auto' : ''}`}>
       {/* We allow tooltip interactions in readOnly, so pointer-events-none might be too aggressive if we want tooltips. 
@@ -177,7 +190,11 @@ export const YearView: React.FC<YearViewProps> = ({ currentDate, readOnly = fals
         const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
         return (
-          <div key={month.toISOString()} className="space-y-2">
+          <div 
+            key={month.toISOString()} 
+            id={`month-${month.getMonth()}`}
+            className="space-y-2"
+          >
             <h3 className="font-semibold text-gray-900 mb-2">
               {format(month, 'MMMM')}
             </h3>
