@@ -8,13 +8,13 @@ import { ParentType } from '../domain/entities/CalendarDay';
 
 export const useSync = () => {
   const { email } = useAuthStore();
-  const { events, days, setEvents, setDays, initializeDefaultEvents } = useCalendarStore();
+  const { events, days, dayDetails, setEvents, setDays, initializeDefaultEvents } = useCalendarStore();
   const { setIsSaving, setLastSyncedAt } = useSyncStore();
   const isInitialMount = useRef(true);
   const isRemoteUpdate = useRef(false);
 
   // Helper to push changes to remote
-  const pushData = async (currentEvents: CalendarEvent[], currentDays: Record<string, ParentType>) => {
+  const pushData = async (currentEvents: CalendarEvent[], currentDays: Record<string, ParentType>, currentDayDetails: Record<string, { exchangeTime?: string }>) => {
       try {
         setIsSaving(true);
         // Upsert Events
@@ -34,11 +34,16 @@ export const useSync = () => {
         }
 
         // Upsert Days
-        const daysToUpsert = Object.entries(currentDays).map(([date, parent]) => ({
-           user_email: email,
-           date: date,
-           parent: parent
-        }));
+        const daysToUpsert = Object.entries(currentDays).map(([date, parent]) => {
+           const details = currentDayDetails[date] || {};
+           return {
+             user_email: email,
+             date: date,
+             parent: parent,
+             pickup_time: details.exchangeTime, // Mapping exchangeTime to pickup_time column
+             dropoff_time: null, // Deprecated
+           };
+        });
 
         if (daysToUpsert.length > 0) {
             await supabase.from('days').upsert(daysToUpsert, { onConflict: 'user_email, date' });
@@ -92,10 +97,16 @@ export const useSync = () => {
 
            if (remoteDays && !daysError) {
              const daysMap: Record<string, ParentType> = {};
+             const dayDetailsMap: Record<string, { exchangeTime?: string }> = {};
              remoteDays.forEach((d: any) => {
                daysMap[d.date] = d.parent as ParentType;
+               if (d.pickup_time) {
+                 dayDetailsMap[d.date] = {
+                   exchangeTime: d.pickup_time, // Mapping pickup_time column to exchangeTime
+                 };
+               }
              });
-             setDays(daysMap);
+             setDays(daysMap, dayDetailsMap);
            }
         } else {
            // REMOTE IS EMPTY: Check Local Data
@@ -103,6 +114,7 @@ export const useSync = () => {
            // We access store directly to get latest state
            let localEvents = useCalendarStore.getState().events;
            const localDays = useCalendarStore.getState().days;
+           const localDayDetails = useCalendarStore.getState().dayDetails;
            
            if (localEvents.length === 0) {
               // If local is also empty, initialize defaults
@@ -112,7 +124,7 @@ export const useSync = () => {
 
            // If we have data now, push it to initialize the remote
            if (localEvents.length > 0 || Object.keys(localDays).length > 0) {
-               await pushData(localEvents, localDays);
+               await pushData(localEvents, localDays, localDayDetails);
            }
         }
       } catch (error) {
@@ -152,7 +164,7 @@ export const useSync = () => {
     }
 
     // Immediate push without debounce (per user request)
-    pushData(events, days);
+    pushData(events, days, dayDetails);
     
-  }, [events, days, email]); // Dependencies trigger push
+  }, [events, days, dayDetails, email]); // Dependencies trigger push
 };

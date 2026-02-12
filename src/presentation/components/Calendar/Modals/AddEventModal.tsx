@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { X, Calendar as CalendarIcon, Type, AlignLeft, Palette, Trash2, Save } from 'lucide-react';
+import { X, Calendar as CalendarIcon, Type, AlignLeft, Palette, Trash2, Save, Clock } from 'lucide-react';
 import { useEventModalStore } from '../../../hooks/useEventModalStore';
 import { useCalendarStore } from '../../../../infrastructure/stores/useCalendarStore';
 import { CalendarEvent, EventType } from '../../../../domain/entities/CalendarEvent';
+import { ParentType } from '../../../../domain/entities/CalendarDay';
 
 const EVENT_TYPES: { value: EventType; label: string; color: string }[] = [
   { value: 'vacation', label: 'Férias', color: '#10B981' }, // Green
@@ -21,6 +22,7 @@ export const AddEventModal = () => {
   const { isOpen, selectedDate, selectedEndDate, selectedEvent, closeModal } = useEventModalStore();
   const { addEvent, updateEvent, removeEvent } = useCalendarStore();
 
+  // Event State
   const [title, setTitle] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -29,7 +31,7 @@ export const AddEventModal = () => {
   const [description, setDescription] = useState('');
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && selectedDate) {
       if (selectedEvent) {
         setTitle(selectedEvent.title);
         setStartDate(selectedEvent.startDate);
@@ -37,7 +39,7 @@ export const AddEventModal = () => {
         setType(selectedEvent.type);
         setColor(selectedEvent.color || COLORS[7]);
         setDescription(selectedEvent.description || '');
-      } else if (selectedDate) {
+      } else {
         const dateStr = format(selectedDate, 'yyyy-MM-dd');
         const endDateStr = selectedEndDate ? format(selectedEndDate, 'yyyy-MM-dd') : dateStr;
         
@@ -49,10 +51,16 @@ export const AddEventModal = () => {
         setDescription('');
       }
     }
-  }, [isOpen, selectedDate, selectedEndDate, selectedEvent]);
+  }, [isOpen, selectedDate, selectedEndDate, selectedEvent]); // Removed store actions to avoid re-runs
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // If not editing an event and title is empty, just close (saved details above)
+    if (!selectedEvent && !title.trim()) {
+      closeModal();
+      return;
+    }
     
     const eventData: CalendarEvent = {
       id: selectedEvent?.id || crypto.randomUUID(),
@@ -78,7 +86,7 @@ export const AddEventModal = () => {
       closeModal();
     }
   };
-
+  
   if (!isOpen) return null;
 
   return (
@@ -102,7 +110,7 @@ export const AddEventModal = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Title */}
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Título do Evento</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Type className="h-4 w-4 text-gray-400" />
@@ -110,14 +118,14 @@ export const AddEventModal = () => {
                   <input
                     type="text"
                     id="title"
-                    required
                     className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 sm:text-sm transition-shadow"
-                    placeholder="Ex: Férias em Família"
+                    placeholder="Ex: Aniversário, Consulta Médica..."
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                   />
                 </div>
               </div>
+
 
               {/* Dates */}
               <div className="grid grid-cols-2 gap-4">

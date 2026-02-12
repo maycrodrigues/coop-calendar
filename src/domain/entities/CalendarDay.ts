@@ -8,7 +8,14 @@ export type ParentType =
   | 'shared-mother-father-reversed' 
   | null;
 
+export interface DayInfo {
+  parent: ParentType;
+  exchangeTime?: string; // Horário de troca (substitui pickup/dropoff)
+  reason?: string; // optional note
+}
+
 export interface CalendarDay {
   date: Date;
   parent: ParentType;
+  details?: DayInfo;
 }

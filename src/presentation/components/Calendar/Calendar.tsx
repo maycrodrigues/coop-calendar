@@ -6,6 +6,7 @@ import { YearView } from './Views/YearView';
 import { CalendarViewType } from '../../../domain/entities/CalendarView';
 import { useCalendarNavigation } from '../../hooks/useCalendarNavigation';
 import { AddEventModal } from './Modals/AddEventModal';
+import { ExchangeTimesModal } from './Modals/ExchangeTimesModal';
 import { LogViewerModal } from './Modals/LogViewerModal';
 import { CalendarActions } from '../Layout/Footer/CalendarActions';
 import { useIsMobile } from '../../hooks/useIsMobile';
@@ -62,6 +63,7 @@ export const Calendar: React.FC = () => {
         )}
       </div>
       {!isMobile && <AddEventModal />}
+      {!isMobile && <ExchangeTimesModal />}
       <LogViewerModal />
     </>
   );

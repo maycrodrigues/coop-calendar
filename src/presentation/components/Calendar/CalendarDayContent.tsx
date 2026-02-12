@@ -1,10 +1,11 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
+import { Clock } from 'lucide-react';
 import { ParentType } from '../../../domain/entities/CalendarDay';
 import { CalendarEvent } from '../../../domain/entities/CalendarEvent';
 import { useCalendarStore } from '../../../infrastructure/stores/useCalendarStore';
-import { getAdjacentDaysParents } from '../../../domain/utils/parentAssignment';
+import { useEventModalStore } from '../../hooks/useEventModalStore';
 import { getParentLabelKey } from '../../utils/parentLabel';
 
 interface CalendarDayContentProps {
@@ -16,14 +17,42 @@ interface CalendarDayContentProps {
 
 export const CalendarDayContent: React.FC<CalendarDayContentProps> = ({ date, parent, events, onEventClick }) => {
   const { t } = useTranslation();
-  const { getParentForDay } = useCalendarStore();
+  const { getParentForDay, getDayDetails } = useCalendarStore();
+  const { openExchangeModal } = useEventModalStore();
 
   const labelKey = getParentLabelKey(date, parent, getParentForDay);
+  const dayDetails = getDayDetails(date);
+  
+  // Check if it is a shared day
+  const isSharedDay = parent && String(parent).includes('shared');
+  
+  // Format times for display (e.g. 18:00 -> 18h)
+  const formatTime = (time?: string) => {
+    if (!time) return '';
+    return time.replace(':00', 'h');
+  };
+
+  const handleExchangeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    openExchangeModal(date);
+  };
 
   return (
     <>
       <div className="flex justify-between items-start p-0.5 sm:p-1">
-        <div className="text-xs sm:text-sm font-semibold">{format(date, 'd')}</div>
+        <div className="flex items-center gap-1">
+          <div className="text-xs sm:text-sm font-semibold">{format(date, 'd')}</div>
+          {/* Exchange Icon for Shared Days */}
+          {isSharedDay && (
+            <button 
+              onClick={handleExchangeClick}
+              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full p-0.5 transition-colors z-20 relative"
+              title="Horários de Troca"
+            >
+              <Clock size={12} className="sm:w-3.5 sm:h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
       
       {/* Event Indicators */}
@@ -61,8 +90,16 @@ export const CalendarDayContent: React.FC<CalendarDayContentProps> = ({ date, pa
       </div>
 
       {parent && (
-        <div className="text-[10px] sm:text-xs mt-auto p-0.5 sm:p-1 truncate w-full">
-          {t(labelKey)}
+        <div className="text-[10px] sm:text-xs mt-auto p-0.5 sm:p-1 w-full">
+          <div className="truncate font-medium">{t(labelKey)}</div>
+          
+          {/* Shared Day Times Display */}
+          {dayDetails && dayDetails.exchangeTime && (
+            <div className="flex items-center gap-1 text-[10px] text-blue-700 font-bold mt-0.5 bg-blue-50/50 rounded px-1 py-0.5 -mx-0.5">
+              <Clock size={10} className="text-blue-600" />
+              <span>{dayDetails.exchangeTime}</span>
+            </div>
+          )}
         </div>
       )}
     </>
