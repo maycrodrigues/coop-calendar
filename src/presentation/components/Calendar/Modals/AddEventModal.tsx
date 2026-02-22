@@ -5,6 +5,9 @@ import { useEventModalStore } from '../../../hooks/useEventModalStore';
 import { useCalendarStore } from '../../../../infrastructure/stores/useCalendarStore';
 import { CalendarEvent, EventType } from '../../../../domain/entities/CalendarEvent';
 import { ParentType } from '../../../../domain/entities/CalendarDay';
+import { useTranslation } from 'react-i18next';
+import { useConfirmationAlert } from '../../../services/alerts/confirmationAlert';
+import { showToast } from '../../../services/alerts/toastAlert';
 
 const EVENT_TYPES: { value: EventType; label: string; color: string }[] = [
   { value: 'vacation', label: 'Férias', color: '#10B981' }, // Green
@@ -21,6 +24,8 @@ const COLORS = [
 export const AddEventModal = () => {
   const { isOpen, selectedDate, selectedEndDate, selectedEvent, closeModal } = useEventModalStore();
   const { addEvent, updateEvent, removeEvent } = useCalendarStore();
+  const { t } = useTranslation();
+  const { showConfirmation } = useConfirmationAlert();
 
   // Event State
   const [title, setTitle] = useState('');
@@ -80,9 +85,18 @@ export const AddEventModal = () => {
     closeModal();
   };
 
-  const handleDelete = () => {
-    if (selectedEvent) {
+  const handleDelete = async () => {
+    if (!selectedEvent) return;
+    const confirmed = await showConfirmation({
+      text: t('calendar.event.confirmDelete', 'Tem certeza que deseja remover este evento?'),
+      icon: 'warning',
+    });
+    if (confirmed) {
       removeEvent(selectedEvent.id);
+      showToast({
+        message: t('calendar.event.removed'),
+        type: 'success',
+      });
       closeModal();
     }
   };

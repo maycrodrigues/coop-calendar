@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { X, Search, FileText, Download } from 'lucide-react';
-import { format } from 'date-fns';
+import { X, Search, FileText, Download, Eye, Clipboard } from 'lucide-react';
 import { useLogStore } from '../../../../infrastructure/stores/useLogStore';
+import type { LogEntry } from '../../../../infrastructure/stores/useLogStore';
 import { useLogModalStore } from '../../../hooks/useLogModalStore';
 
 export const LogViewerModal: React.FC = () => {
   const { logs } = useLogStore();
   const { isOpen, closeLogModal } = useLogModalStore();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
 
   if (!isOpen) return null;
 
@@ -33,6 +34,22 @@ export const LogViewerModal: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const openDetails = (log: LogEntry) => {
+    setSelectedLog(log);
+  };
+
+  const closeDetails = () => {
+    setSelectedLog(null);
+  };
+
+  const handleCopyJson = () => {
+    if (!selectedLog) return;
+    const text = JSON.stringify(selectedLog, null, 2);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => {});
+    }
   };
 
   return (
@@ -96,21 +113,31 @@ export const LogViewerModal: React.FC = () => {
                           <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Ação
                           </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Detalhes
-                          </th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {filteredLogs.length === 0 ? (
                           <tr>
-                            <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">
+                            <td colSpan={3} className="px-6 py-4 text-center text-sm text-gray-500">
                               Nenhum registro encontrado.
                             </td>
                           </tr>
                         ) : (
                           filteredLogs.map((log) => (
-                            <tr key={log.id} className="hover:bg-gray-50">
+                            <tr
+                              key={log.id}
+                              className="hover:bg-gray-50 cursor-pointer"
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => openDetails(log)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  openDetails(log);
+                                }
+                              }}
+                              aria-label={`Abrir detalhes do log ${log.action} por ${log.user}`}
+                            >
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {new Date(log.timestamp).toLocaleString()}
                               </td>
@@ -121,9 +148,6 @@ export const LogViewerModal: React.FC = () => {
                                 <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
                                   {log.action}
                                 </span>
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={log.details}>
-                                {log.details || '-'}
                               </td>
                             </tr>
                           ))
@@ -146,6 +170,92 @@ export const LogViewerModal: React.FC = () => {
           </div>
         </div>
       </div>
+      {selectedLog && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/30" onClick={closeDetails} aria-hidden="true" />
+          <div role="dialog" aria-modal="true" className="relative w-full max-w-2xl bg-white rounded-lg shadow-xl">
+            <div className="flex items-center justify-between border-b px-5 py-4">
+              <h4 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                <Eye className="h-5 w-5 text-gray-500" />
+                Detalhes do Log
+              </h4>
+              <button
+                onClick={closeDetails}
+                className="text-gray-400 hover:text-gray-600"
+                aria-label="Fechar detalhes do log"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500">ID</p>
+                  <p className="text-sm font-medium text-gray-900 break-all">{selectedLog.id}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Data/Hora</p>
+                  <p className="text-sm font-medium text-gray-900">{new Date(selectedLog.timestamp).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Usuário</p>
+                  <p className="text-sm font-medium text-gray-900">{selectedLog.user}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Ação</p>
+                  <p className="text-sm font-medium text-gray-900">{selectedLog.action}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Nível</p>
+                  <p className="text-sm font-medium text-gray-900">{selectedLog.level ?? 'info'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Tenant</p>
+                  <p className="text-sm font-medium text-gray-900">{selectedLog.tenantId ?? '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Rota</p>
+                  <p className="text-sm font-medium text-gray-900 break-all">{selectedLog.path ?? '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Idioma</p>
+                  <p className="text-sm font-medium text-gray-900">{selectedLog.language ?? '-'}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Detalhes</p>
+                <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{selectedLog.details ?? '-'}</p>
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs text-gray-500">Conteúdo bruto (JSON)</p>
+                  <button
+                    onClick={handleCopyJson}
+                    className="inline-flex items-center gap-2 text-xs text-indigo-600 hover:text-indigo-700"
+                    title="Copiar JSON"
+                  >
+                    <Clipboard className="h-4 w-4" />
+                    Copiar
+                  </button>
+                </div>
+                <pre className="text-xs bg-gray-900 text-gray-100 rounded-md p-3 overflow-x-auto max-h-60">
+{JSON.stringify(selectedLog, null, 2)}
+                </pre>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 border-t px-5 py-3">
+              <button
+                onClick={closeDetails}
+                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

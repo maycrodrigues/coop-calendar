@@ -52,6 +52,7 @@ export const en = {
         defaultName: 'Event',
         success: 'Event saved!',
         removed: 'Event removed!',
+        confirmDelete: 'Are you sure you want to remove this event?',
       },
       export: {
         button: 'Export JSON',

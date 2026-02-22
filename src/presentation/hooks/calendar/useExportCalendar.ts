@@ -13,7 +13,14 @@ export const useExportCalendar = () => {
 
   const handleExport = useCallback(async () => {
     const jsonData = exportCalendar();
-    logAction('EXPORT_CALENDAR', 'Exported calendar data');
+    logAction('EXPORT_CALENDAR', {
+      details: 'Exported calendar data',
+      entityType: 'calendar',
+      level: 'info',
+      payload: {
+        length: Array.isArray(jsonData) ? jsonData.length : undefined,
+      },
+    });
     
     await SwalConfig.fire({
       title: t('calendar.export.title'),

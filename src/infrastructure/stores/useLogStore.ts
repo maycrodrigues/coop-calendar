@@ -7,7 +7,15 @@ export interface LogEntry {
   user: string;
   action: string;
   details?: string;
-  tenantId?: string; // Future proofing for multi-tenant
+  level?: 'info' | 'warning' | 'error';
+  ip?: string;
+  path?: string;
+  userAgent?: string;
+  language?: string;
+  entityType?: string;
+  entityId?: string;
+  payload?: Record<string, unknown>;
+  tenantId?: string;
 }
 
 interface LogState {

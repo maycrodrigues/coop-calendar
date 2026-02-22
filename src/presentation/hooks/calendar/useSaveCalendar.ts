@@ -52,14 +52,25 @@ export const useSaveCalendar = () => {
       try {
         setIsSaving(true);
         await saveCalendar(records);
-        logAction('SAVE_CALENDAR', `Saved ${records.length} records`);
+        logAction('SAVE_CALENDAR', {
+          details: `Saved ${records.length} records`,
+          entityType: 'calendar',
+          level: 'info',
+          payload: {
+            recordsCount: records.length,
+          },
+        });
         showToast({
           message: t('calendar.save.success'),
           type: 'success',
         });
       } catch (error) {
         console.error('Error saving calendar:', error);
-        logAction('SAVE_CALENDAR_ERROR', String(error));
+        logAction('SAVE_CALENDAR_ERROR', {
+          details: String(error),
+          entityType: 'calendar',
+          level: 'error',
+        });
         showToast({
           message: t('calendar.save.error'),
           type: 'error',

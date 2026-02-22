@@ -77,6 +77,7 @@ export const ptBR = {
         defaultName: 'Evento',
         success: 'Evento salvo!',
         removed: 'Evento removido!',
+        confirmDelete: 'Tem certeza que deseja remover este evento?',
       },
     },
     alerts: {

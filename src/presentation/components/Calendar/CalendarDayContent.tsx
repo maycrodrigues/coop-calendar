@@ -57,7 +57,14 @@ export const CalendarDayContent: React.FC<CalendarDayContentProps> = ({ date, pa
       
       {/* Event Indicators */}
       <div className="flex flex-col gap-0.5 mt-0.5 min-h-[12px] px-0.5 sm:px-1">
-        {events.slice(0, 4).map(event => {
+        {[...events]
+          .sort((a, b) => {
+            const aSingle = a.startDate === a.endDate;
+            const bSingle = b.startDate === b.endDate;
+            return Number(aSingle) - Number(bSingle); // barras (false) primeiro, bolinhas (true) depois
+          })
+          .slice(0, 4)
+          .map(event => {
           const isStart = event.startDate === format(date, 'yyyy-MM-dd');
           const isEnd = event.endDate === format(date, 'yyyy-MM-dd');
           const isSingleDay = event.startDate === event.endDate;

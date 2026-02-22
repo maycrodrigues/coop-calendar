@@ -51,6 +51,7 @@ export const es = {
         defaultName: 'Evento',
         success: '¡Evento guardado!',
         removed: '¡Evento eliminado!',
+        confirmDelete: '¿Seguro que deseas eliminar este evento?',
       },
       export: {
         button: 'Exportar JSON',
